@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ChatVault | Student</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #4a76a8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        main {
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: none;
+            font-size: 16px;
+        }
+
+        button {
+            background: #4a76a8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #3b5d7d;
+        }
+
+        #replyBox {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e2f0ff;
+            border-radius: 5px;
+            min-height: 50px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>ChatVault – Student</header>
+
+    <main>
+        <label for="message"><strong>Send a Message:</strong></label>
+        <textarea id="message" placeholder="Type your message here..."></textarea>
+        <button onclick="sendMessage()">Send</button>
+
+        <h3>Your Private Reply</h3>
+        <div id="replyBox">No reply yet</div>
+    </main>
+
+    <script>
+        let studentId = localStorage.getItem("studentId");
+        if (!studentId) { studentId = "stu-" + Math.random().toString(36).substring(2, 10); localStorage.setItem("studentId", studentId); }
+
+        function sendMessage() {
+            const msg = document.getElementById("message").value.trim();
+            if (!msg) return alert("Cannot send empty message");
+            fetch("http://localhost:3001/send-message", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: msg, studentId }) })
+                .then(r => r.json()).then(d => { if (d.success) { alert("Message sent for admin review"); document.getElementById("message").value = ""; } else alert(d.msg); });
+        }
+
+        function checkReply() {
+            fetch(`http://localhost:3001/my-reply/${studentId}`)
+                .then(r => r.json()).then(d => { if (d.private_reply) document.getElementById("replyBox").innerText = d.private_reply; });
+        }
+
+        setInterval(checkReply, 4000);
+    </script>
+
+</body>
+
+</html>

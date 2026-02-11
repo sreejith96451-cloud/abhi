@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ChatVault | Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f8ff;
+            color: #0f2a56;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #0b5ed7;
+            color: #ffffff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(11, 94, 215, 0.2);
+        }
+
+        header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        header button {
+            background: transparent;
+            color: #ffffff;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        #menu {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: #ffffff;
+            border: 1px solid #c8d9f8;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 100;
+            box-shadow: 0 8px 20px rgba(11, 94, 215, 0.15);
+        }
+
+        #menu button {
+            display: block;
+            width: 180px;
+            padding: 10px;
+            border: none;
+            background: none;
+            color: #0f2a56;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        #menu button:hover {
+            background: #eaf2ff;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .message-card {
+            background: #ffffff;
+            border: 1px solid #d5e3fb;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(15, 42, 86, 0.08);
+        }
+
+        .message-card button {
+            background: #0b5ed7;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .message-card button:hover {
+            background: #084bb0;
+        }
+
+        .message-card textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #c6d7f7;
+            resize: none;
+            color: #0f2a56;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        if (localStorage.getItem("adminAuth") !== "true") { alert("Unauthorized!"); window.location.href = "admin-login.html"; }
+    </script>
+
+    <header>
+        <h2>ChatVault Admin Panel</h2>
+        <button onclick="toggleMenu()">:</button>
+        <div id="menu">
+            <button onclick="refreshMessages()">Refresh Messages</button>
+            <button onclick="clearSpam()">Clear Spam Tracker</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <main id="messages"></main>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById("menu");
+            menu.style.display = menu.style.display === "block" ? "none" : "block";
+        }
+        function logout() { localStorage.removeItem("adminAuth"); window.location.href = "admin-login.html"; }
+        function refreshMessages() { loadMessages(); alert("Messages refreshed!"); }
+        function clearSpam() {
+            fetch("http://localhost:3001/clear-spam", { method: "POST" }).then(() => alert("Spam tracker reset"));
+        }
+
+        function loadMessages() {
+            fetch("http://localhost:3001/messages")
+                .then(r => r.json())
+                .then(data => {
+                    const box = document.getElementById("messages");
+                    box.innerHTML = "";
+                    data.forEach(m => {
+                        box.innerHTML += `
+        <div class="message-card">
+          <p><strong>Message:</strong> ${m.message}</p>
+          <p><strong>Status:</strong> ${m.approved ? "Approved" : "Pending"}</p>
+          ${!m.approved ? `<button onclick="approve(${m.id})">Approve</button>` : ""}
+          <textarea id="r${m.id}" placeholder="Private reply"></textarea>
+          <button onclick="reply(${m.id})">Send Reply</button>
+        </div>
+      `;
+                    });
+                });
+        }
+
+        function approve(id) {
+            fetch("http://localhost:3001/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+                .then(() => loadMessages());
+        }
+
+        function reply(id) {
+            const reply = document.getElementById("r" + id).value;
+            fetch("http://localhost:3001/private-reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, reply }) })
+                .then(() => { alert("Reply sent"); loadMessages(); });
+        }
+
+        loadMessages();
+    </script>
+
+</body>
+
+</html>
